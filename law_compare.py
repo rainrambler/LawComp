@@ -12,7 +12,6 @@ def chstring2int(uchar):
     sep_char = re.split(r'亿|万',uchar)
     total_sum = 0
     for i,sc in enumerate(sep_char):
-        ##print("level 1:{}-----{}".format(i,sc))
         ##2）对每一部分进行转化处理，比如第二部分[ "三千二百四十二"]
         split_num = sc.replace('千', '1000').replace('百', '100').replace('十', '10')
         int_series = re.split(r'(\d{1,})', split_num)
@@ -20,14 +19,11 @@ def chstring2int(uchar):
         int_series = ["".join(i) for i in zip(int_series[0::2],int_series[1::2])]
         int_series = ['零' if i == '' else i for i in int_series]
         num = 0
-        ##int_series：["三1000", "二100", "四10", "二"]
         ##3）求和加总int_series
         for ix, it in enumerate(int_series):
             it = re.sub('零', '', it) if it != '零' else it
-            ##print("level 2:{}{}".format(ix,it))
             temp = common_used_numerals_tmp[it[0]]*int(it[1:]) if len(it)>1 else common_used_numerals_tmp[it[0]]
             num += temp
-            ##print("transformed part sum %s"%str(num))
         total_sum += num * (10 ** (4*(len(sep_char) - i - 1)))
     return total_sum
 
@@ -41,12 +37,10 @@ class CnLaw:
     def parse_chapter(self, content):
         '''Parse each chapter.'''
         arr = re.finditer(r'第[〇一二三四五六七八九]+章', content)
-        #print("Total chapter:", len(arr))
         indices = []
         chapters = []
 
         for chapt in arr:
-            #print(chapt)
             indices.append(chapt.span()[0])
         i = 0
         while i < len(indices)-1:
@@ -89,8 +83,6 @@ class CnLaw:
         sections.append(last)
         
         for item in sections:
-            #print("Articles: ", item)
-            #print('===')
             self.parse_article(item)
             
     def parse_article(self, content):
@@ -102,9 +94,7 @@ class CnLaw:
         parts = []
 
         for item in arr:
-            #print(item)
             indices.append(item.span()[0])
-        #print(indices)
 
         if len(indices) == 0:
             return
@@ -157,6 +147,13 @@ def read_text_file(filename):
         data = file.read()
         return data
     return ''
+
+def remove_first_line(content):
+    ''' Remove first line in multi-line content '''
+    idx = content.find('\n')
+    if idx == -1:
+        return content
+    return content[idx+1:]
 
 def compare_gdpr_vs_cn():
     content = read_text_file('CN PIPL Stanford ZH.txt')
