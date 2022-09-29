@@ -257,7 +257,7 @@ class EuLaw:
     def parse_article(self, content):
         ''' eg: 第12条 信息...
         '''
-        #print('==> Parsing article ', content[:30], '...')
+        print('==> Parsing article [', content[:30], ']...')
         arr = re.finditer(r'第[0-9]+条', content)
         indices = []
         parts = []
@@ -391,37 +391,6 @@ class EuLaw:
     def has_sub_article(self, content):
         ''' Does article have clause '''
         return re.search(r'[0-9]+.', content) is not None
-
-    def parse_article_clause(self, content):
-        ''' eg: 1．对于和...
-        '''
-        #print('==> Parsing clause ', content[:30], '...')
-        arr = re.finditer(r'[0-9]+.', content)
-        indices = []
-        parts = []
-        clause_ids = []
-
-        for item in arr:
-            indices.append(item.span()[0])
-            clause_ids.append(item.group(0))
-
-        mainclause = content[:indices[0]]
-        i = 0
-        while i < len(indices)-1:
-            part = content[indices[i]:indices[i+1]]
-            parts.append(mainclause + part)
-            i+=1
-        last = content[indices[len(indices)-1]:]
-        parts.append(mainclause+last)
-
-        totalcount = len(clause_ids)
-        if totalcount != len(parts):
-            print(f"WARN: Clauses Len: {totalcount} and {len(parts)}.")
-            return
-        for i in range(totalcount):
-            one_clause = parts[i]
-            cur_id = self.create_id()
-            self.id2content[cur_id] = one_clause
 
 def read_text_file(filename):
     '''
