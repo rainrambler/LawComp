@@ -5,7 +5,7 @@ common_used_numerals_tmp ={'零':0, '一':1, '二':2, '两':2, '三':3, '四':4,
 
 # https://www.jianshu.com/p/ab16e5af5c32
 def chstring2int(uchar):
-    ''' 
+    '''
     Chinese string to int value. eg. '五十一' ==> 51 (int)
     '''
     ##1）按亿、万分割字符
@@ -22,26 +22,34 @@ def chstring2int(uchar):
         ##3）求和加总int_series
         for ix, it in enumerate(int_series):
             it = re.sub('零', '', it) if it != '零' else it
-            temp = common_used_numerals_tmp[it[0]]*int(it[1:]) if len(it)>1 else common_used_numerals_tmp[it[0]]
+            temp = common_used_numerals_tmp[it[0]]*int(it[1:]) \
+                if len(it)>1 else common_used_numerals_tmp[it[0]]
             num += temp
         total_sum += num * (10 ** (4*(len(sep_char) - i - 1)))
     return total_sum
 
 class CnLaw:
     '''CN PIPL'''
-    curChapter = -1
-    curSection = -1
-    curArticle = -1
+    cur_chapter = ""
+    cur_section = ""
+    cur_article = ""
     id2content = {}
+
+    def print_clauses(self):
+        for k, v in self.id2content.items():
+            print(f'[{k}]:{v[0:30]}')
     
     def parse_chapter(self, content):
         '''Parse each chapter.'''
         arr = re.finditer(r'第[〇一二三四五六七八九]+章', content)
         indices = []
         chapters = []
+        chapter_ids = []
 
         for chapt in arr:
             indices.append(chapt.span()[0])
+            chapter_ids.append(chapt.group(0))
+        #print(chapter_ids)
         i = 0
         while i < len(indices)-1:
             part = content[indices[i]:indices[i+1]]
@@ -50,8 +58,15 @@ class CnLaw:
         last = content[indices[len(indices)-1]:]
         chapters.append(last)
 
-        for item in chapters:
-            sections = remove_first_line(item)
+        totalcount = len(chapter_ids)
+        if totalcount != len(chapters):
+            print(f"WARN: Chapter Len: {totalcount} and {len(chapters)}.")
+            return
+
+        for i in range(totalcount):
+            one_chapter = chapters[i]
+            self.cur_chapter = chapter_ids[i]
+            sections = remove_first_line(one_chapter)
             self.parse_section(sections)
 
     def parse_section(self, content):
@@ -59,17 +74,19 @@ class CnLaw:
         '''
         print('==> Parsing section ', content[:30], '...')
         if re.search(r'第[〇一二三四五六七八九]+节', content) is None:
+            self.cur_section = ""
             self.parse_article(content)
             return
         arr = re.finditer(r'第[〇一二三四五六七八九]+节', content)
         #print("Sections: ", arr, "<==")
         indices = []
         sections = []
+        section_ids = []
         
         for item in arr:
-            #print(item)
             indices.append(item.span()[0])
-        #print("Index:", indices)
+            section_ids.append(item.group(0))
+        #print("section_ids:", section_ids)
         
         if len(indices) == 0:
             print("No Index in ", content[:30], '')
@@ -82,9 +99,16 @@ class CnLaw:
             i+=1
         last = content[indices[len(indices)-1]:]
         sections.append(last)
+
+        totalcount = len(section_ids)
+        if totalcount != len(sections):
+            print(f"WARN: Sections Len: {totalcount} and {len(sections)}.")
+            return
         
-        for item in sections:
-            subs = remove_first_line(item)
+        for i in range(totalcount):
+            one_section = sections[i]
+            self.cur_section = section_ids[i]
+            subs = remove_first_line(one_section)
             self.parse_article(subs)
             
     def parse_article(self, content):
@@ -94,9 +118,11 @@ class CnLaw:
         arr = re.finditer(r'第[〇一二三四五六七八九十]+条', content)
         indices = []
         parts = []
+        article_ids = []
 
         for item in arr:
             indices.append(item.span()[0])
+            article_ids.append(item.group(0))
 
         if len(indices) == 0:
             return
@@ -109,12 +135,27 @@ class CnLaw:
         last = content[indices[len(indices)-1]:]
         parts.append(last)
 
-        for item in parts:
-            if self.has_clause(item):
-                self.parse_article_clause(item)
+        totalcount = len(article_ids)
+        if totalcount != len(parts):
+            print(f"WARN: Articles Len: {totalcount} and {len(parts)}.")
+            return
+
+        for i in range(totalcount):
+            one_article = parts[i]
+            self.cur_article = article_ids[i]
+
+            if self.has_clause(one_article):
+                self.parse_article_clause(one_article)
             else:
-                print(item[0:20])
-                print('===')
+                cur_id = self.create_id()
+                self.id2content[cur_id] = one_article
+
+    def create_id(self):
+        ''' Make id in dict'''
+        if len(self.cur_section) > 0:
+            return self.cur_chapter + "_" + self.cur_section + "_" + self.cur_article
+        else:
+            return self.cur_chapter + "_" + self.cur_article
 
     def has_clause(self, content):
         ''' Does article have clause '''
@@ -127,12 +168,13 @@ class CnLaw:
         arr = re.finditer(r'（[〇一二三四五六七八九十]+）', content)
         indices = []
         parts = []
+        clause_ids = []
 
         for item in arr:
             indices.append(item.span()[0])
+            clause_ids.append(item.group(0))
 
         mainclause = content[:indices[0]]
-        print("Main: [", mainclause, ']')
         i = 0
         while i < len(indices)-1:
             part = content[indices[i]:indices[i+1]]
@@ -141,9 +183,14 @@ class CnLaw:
         last = content[indices[len(indices)-1]:]
         parts.append(mainclause+last)
 
-        for item in parts:
-            print(item[0:30])
-            print('===---===')
+        totalcount = len(clause_ids)
+        if totalcount != len(parts):
+            print(f"WARN: Clauses Len: {totalcount} and {len(parts)}.")
+            return
+        for i in range(totalcount):
+            one_clause = parts[i]
+            cur_id = self.create_id()
+            self.id2content[cur_id] = one_clause
 
 def read_text_file(filename):
     '''
@@ -166,6 +213,7 @@ def compare_gdpr_vs_cn():
     content = read_text_file('CN PIPL Stanford ZH.txt')
     alaw = CnLaw()
     alaw.parse_chapter(content)
+    alaw.print_clauses()
     #print(content)
 
 def main():
