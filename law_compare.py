@@ -1,3 +1,4 @@
+# for string regex
 import re
 
 common_used_numerals_tmp ={'零':0, '一':1, '二':2, '两':2, '三':3, '四':4, '五':5, '六':6, '七':7, \
@@ -192,6 +193,8 @@ class CnLaw:
             cur_id = self.create_id()
             self.id2content[cur_id] = one_clause
 
+SUB_ARTICLE_MATCH = r'[0-9]+．'
+
 class EuLaw:
     '''EU GDPR
     EN: CHAPTER III / Section 1 / Article 12 / 1. / (a) 
@@ -206,7 +209,11 @@ class EuLaw:
         ''' Print contents '''
         for k, v in self.id2content.items():
             print(f'[{k}]:{v[0:30]}')
-    
+
+    def print_briefings(self):
+        ''' Print briefings '''
+        print("Total articles: ", len(self.id2content))
+
     def parse_chapter(self, content):
         '''Parse each chapter. eg: 第二章 原则'''
         arr = re.finditer(r'第[〇一二三四五六七八九]+章', content)
@@ -285,9 +292,10 @@ class EuLaw:
 
         for i in range(totalcount):
             one_article = parts[i]
+            print('Cur Article: ', one_article)
             self.cur_article = article_ids[i]
 
-            if self.has_sub_article(one_article):
+            if has_sub_article(one_article):
                 self.parse_sub_article(one_article)
             else:
                 cur_id = self.create_id()
@@ -300,8 +308,10 @@ class EuLaw:
     def parse_sub_article(self, content):
         ''' eg: 第7条 同意的条件 ==> 1．当处理
         '''
-        #print('==> Parsing sub article ', content[:30], '...')
-        arr = re.finditer(r'[0-9]+.', content)
+        print('==> Parsing sub article ', content[:30], '...')
+        arr = re.finditer(SUB_ARTICLE_MATCH, content)
+        print("Founded sub articles: ", arr)
+
         indices = []
         parts = []
         article_ids = []
@@ -310,11 +320,11 @@ class EuLaw:
             indices.append(item.span()[0]) # pos in string
             article_ids.append(item.group(0)) # title, eg. 1．当处理
 
-        print(article_ids)
-        print('=-=-=-=')
         if len(indices) == 0:
             return
 
+        print(article_ids)
+        print('=-=-=-=')
         i = 0
         while i < len(indices)-1:
             part = content[indices[i]:indices[i+1]]
@@ -388,9 +398,9 @@ class EuLaw:
         ''' Does article have clause '''
         return re.search(r'([a-z]+)', content) is not None
 
-    def has_sub_article(self, content):
-        ''' Does article have clause '''
-        return re.search(r'[0-9]+.', content) is not None
+def has_sub_article(content: str):
+    ''' Does article have sub article '''
+    return re.search(SUB_ARTICLE_MATCH, content) is not None
 
 def read_text_file(filename):
     '''
@@ -420,7 +430,17 @@ def compare_gdpr_vs_cn():
     eu_law = EuLaw()
     eu_law.parse_chapter(content)
     eu_law.print_contents()
-    #print(content)
+    #eu_law.print_briefings()
+
+
+def re_demo(content):
+    ''' Demo for regex match '''
+    idx_match = re.compile(r'[0-9]+\.')
+    mo = idx_match.search(content)
+    if mo is None:
+        return ""
+    else:
+        return mo.group()
 
 def main():
     ''' Entrance '''
