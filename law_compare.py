@@ -51,7 +51,8 @@ class CnLaw:
         chapters.append(last)
 
         for item in chapters:
-            self.parse_section(item)
+            sections = remove_first_line(item)
+            self.parse_section(sections)
 
     def parse_section(self, content):
         ''' eg: 第一节　一般规定
@@ -83,7 +84,8 @@ class CnLaw:
         sections.append(last)
         
         for item in sections:
-            self.parse_article(item)
+            subs = remove_first_line(item)
+            self.parse_article(subs)
             
     def parse_article(self, content):
         ''' eg: 第十三条　符合下列...
@@ -108,8 +110,15 @@ class CnLaw:
         parts.append(last)
 
         for item in parts:
-            print(item[0:20])
-            print('===')
+            if self.has_clause(item):
+                self.parse_article_clause(item)
+            else:
+                print(item[0:20])
+                print('===')
+
+    def has_clause(self, content):
+        ''' Does article have clause '''
+        return re.search(r'（[〇一二三四五六七八九十]+）', content) is not None
 
     def parse_article_clause(self, content):
         ''' eg: （三）为履行法定职责或者法定义务所必需；
@@ -120,24 +129,21 @@ class CnLaw:
         parts = []
 
         for item in arr:
-            #print(item)
             indices.append(item.span()[0])
-        #print(indices)
 
-        if len(indices) == 0:
-            return
-
+        mainclause = content[:indices[0]]
+        print("Main: [", mainclause, ']')
         i = 0
         while i < len(indices)-1:
             part = content[indices[i]:indices[i+1]]
-            parts.append(part)
+            parts.append(mainclause + part)
             i+=1
         last = content[indices[len(indices)-1]:]
-        parts.append(last)
+        parts.append(mainclause+last)
 
         for item in parts:
-            print(item[0:20])
-            print('===')
+            print(item[0:30])
+            print('===---===')
 
 def read_text_file(filename):
     '''
@@ -153,7 +159,8 @@ def remove_first_line(content):
     idx = content.find('\n')
     if idx == -1:
         return content
-    return content[idx+1:]
+    else:
+        return content[idx+1:]
 
 def compare_gdpr_vs_cn():
     content = read_text_file('CN PIPL Stanford ZH.txt')
