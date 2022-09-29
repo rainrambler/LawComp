@@ -2,6 +2,7 @@ import unittest
 import law_compare
 
 class StringTest(unittest.TestCase):
+    ''' testcase of string functions '''
     def test_convert(self):
         v = law_compare.chstring2int('五十一')
         self.assertTrue(v == 51)
