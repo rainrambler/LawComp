@@ -17,5 +17,42 @@ class StringTest(unittest.TestCase):
         v = law_compare.remove_first_line(content)
         self.assertTrue(v == content)
 
+    def test_re_demo(self):
+        content = '1. aaa'
+        v = law_compare.re_demo(content)
+        self.assertTrue(v == '1.')
+
+    def test_re_demo2(self):
+        content = 'ha'
+        v = law_compare.re_demo(content)
+        self.assertTrue(v == '')
+
+    def test_re_demo3(self):
+        content = 'aa 22. bb'
+        v = law_compare.re_demo(content)
+        self.assertTrue(v == '22.')
+
+    def test_has_sub_article_1(self):
+        content = 'aa 22. bb'
+        v = law_compare.has_sub_article(content)
+        self.assertTrue(v is True)
+
+    def test_has_sub_article_2(self):
+        content = 'aa . bb'
+        v = law_compare.has_sub_article(content)
+        self.assertTrue(v is False)
+
+    def test_has_sub_article_3(self):
+        content = '''
+        第60条 领导性监管机构和其他相关监管机构的合作
+
+1．领导性监管机构应当根据本条和其他相关监管机构进行合作，努力达成共识。领导性监管机构和相关监管机构应当彼此分享相关信息。
+
+2．领导性监管机构可以随时要求其他相关监管机构提供第61条规定的互助合作，而且可以根据第62条而进行联合行动，这尤其适用于如下情形：为了进行调查，或者为了实施涉及到设立在另一成员国的控制者或处理者的措施。
+
+        '''
+        v = law_compare.has_sub_article(content)
+        self.assertTrue(v is True)
+
 if __name__ == "__main__":
     unittest.main()
