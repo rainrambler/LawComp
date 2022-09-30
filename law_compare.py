@@ -1,3 +1,6 @@
+"""
+Filename: law_compare.py
+"""
 # for string regex
 import re
 
@@ -193,7 +196,7 @@ class CnLaw:
             cur_id = self.create_id()
             self.id2content[cur_id] = one_clause
 
-SUB_ARTICLE_MATCH = r'[0-9]+．'
+SUB_ARTICLE_MATCH = r'[0-9]+．' # Caution: not English dot 
 
 class EuLaw:
     '''EU GDPR
@@ -262,8 +265,7 @@ class EuLaw:
         self.parse_article(section_content)
 
     def parse_article(self, content):
-        ''' eg: 第12条 信息...
-        '''
+        ''' eg: 第12条 信息... '''
         print('==> Parsing article [', content[:30], ']...')
         arr = re.finditer(r'第[0-9]+条', content)
         indices = []
@@ -271,8 +273,9 @@ class EuLaw:
         article_ids = []
 
         for item in arr:
-            indices.append(item.span()[0]) # pos in string
-            article_ids.append(item.group(0)) # title, eg. 第12条 
+            start_pos = item.span()[0] # pos in string
+            indices.append(start_pos) 
+            article_ids.append(item.group(0)) # title, eg. 第12条
 
         if len(indices) == 0:
             return
@@ -292,7 +295,7 @@ class EuLaw:
 
         for i in range(totalcount):
             one_article = parts[i]
-            print('Cur Article: ', one_article)
+            #print('Cur Article: ', one_article)
             self.cur_article = article_ids[i]
 
             if has_sub_article(one_article):
@@ -402,6 +405,23 @@ def has_sub_article(content: str):
     ''' Does article have sub article '''
     return re.search(SUB_ARTICLE_MATCH, content) is not None
 
+def is_valid_article_index(content: str, pos: int):
+    '''
+    '第1条 aa' ==> True
+    '参考第10条' ==> False
+    '''
+    prev_pos = pos-1
+    if prev_pos < 0:
+        # the first char
+        print(f"pos: {pos}, in {content}, first char")
+        return True
+    if prev_pos >= len(content):
+        print(f"pos: {pos}, in {content}, exceed")
+        return False
+    cur_char = content[prev_pos]
+    print(f"pos: {pos}, in {content}, char: [{cur_char}]")
+    return cur_char == '\n'
+
 def read_text_file(filename):
     '''
     Read text file to a string
@@ -416,8 +436,7 @@ def remove_first_line(content):
     idx = content.find('\n')
     if idx == -1:
         return content
-    else:
-        return content[idx+1:]
+    return content[idx+1:]
 
 def compare_gdpr_vs_cn():
     ''' compare EU and cn privacy law '''
