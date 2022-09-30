@@ -3,6 +3,7 @@ Filename: law_compare.py
 """
 # for string regex
 import re
+from text2vec import SearchSimilarity
 
 common_used_numerals_tmp ={'零':0, '一':1, '二':2, '两':2, '三':3, '四':4, '五':5, '六':6, '七':7, \
     '八':8, '九':9, '十':10, '百':100, '千':1000, '万':10000, '亿':100000000}
@@ -42,7 +43,20 @@ class CnLaw:
     def print_clauses(self):
         for k, v in self.id2content.items():
             print(f'[{k}]:{v[0:30]}')
-    
+
+    def print_details(self):
+        ''' Print contents '''
+        for k, v in self.id2content.items():
+            print(f'[{k}]:{v}')
+
+    def get_criteria(self):
+        ''' return all criteria '''
+        arr = []
+        for k, v in self.id2content.items():
+            criterion = f"{k} {v}"
+            arr.append(criterion)
+        return arr
+
     def parse_chapter(self, content):
         '''Parse each chapter.'''
         arr = re.finditer(r'第[〇一二三四五六七八九]+章', content)
@@ -86,16 +100,16 @@ class CnLaw:
         indices = []
         sections = []
         section_ids = []
-        
+
         for item in arr:
             indices.append(item.span()[0])
             section_ids.append(item.group(0))
         #print("section_ids:", section_ids)
-        
+
         if len(indices) == 0:
             print("No Index in ", content[:30], '')
             return
-        
+
         i = 0
         while i < len(indices)-1:
             part = content[indices[i]:indices[i+1]]
@@ -108,13 +122,13 @@ class CnLaw:
         if totalcount != len(sections):
             print(f"WARN: Sections Len: {totalcount} and {len(sections)}.")
             return
-        
+
         for i in range(totalcount):
             one_section = sections[i]
             self.cur_section = section_ids[i]
             subs = remove_first_line(one_section)
             self.parse_article(subs)
-            
+
     def parse_article(self, content):
         ''' eg: 第十三条　符合下列...
         '''
@@ -196,11 +210,11 @@ class CnLaw:
             cur_id = self.create_id()
             self.id2content[cur_id] = one_clause
 
-SUB_ARTICLE_MATCH = r'[0-9]+．' # Caution: not English dot 
+SUB_ARTICLE_MATCH = r'[0-9]+．' # Caution: not English dot
 
 class EuLaw:
     '''EU GDPR
-    EN: CHAPTER III / Section 1 / Article 12 / 1. / (a) 
+    EN: CHAPTER III / Section 1 / Article 12 / 1. / (a)
     ZH: 第三章 / 第一部分 / 第12条 / 1． / (a)
     '''
     cur_chapter = ""
@@ -213,9 +227,22 @@ class EuLaw:
         for k, v in self.id2content.items():
             print(f'[{k}]:{v[0:30]}')
 
+    def print_details(self):
+        ''' Print contents '''
+        for k, v in self.id2content.items():
+            print(f'[{k}]:{v}')
+
     def print_briefings(self):
         ''' Print briefings '''
         print("Total articles: ", len(self.id2content))
+
+    def get_criteria(self):
+        ''' return all criteria '''
+        arr = []
+        for k, v in self.id2content.items():
+            criterion = f"{k} {v}"
+            arr.append(criterion)
+        return arr
 
     def parse_chapter(self, content):
         '''Parse each chapter. eg: 第二章 原则'''
@@ -266,7 +293,7 @@ class EuLaw:
 
     def parse_article(self, content):
         ''' eg: 第12条 信息... '''
-        print('==> Parsing article [', content[:30], ']...')
+        #print('==> Parsing article [', content[:30], ']...')
         arr = re.finditer(r'第[0-9]+条', content)
         indices = []
         parts = []
@@ -274,8 +301,9 @@ class EuLaw:
 
         for item in arr:
             start_pos = item.span()[0] # pos in string
-            indices.append(start_pos) 
-            article_ids.append(item.group(0)) # title, eg. 第12条
+            if is_valid_article_index(content, start_pos):
+                indices.append(start_pos)
+                article_ids.append(item.group(0)) # title, eg. 第12条
 
         if len(indices) == 0:
             return
@@ -295,7 +323,6 @@ class EuLaw:
 
         for i in range(totalcount):
             one_article = parts[i]
-            #print('Cur Article: ', one_article)
             self.cur_article = article_ids[i]
 
             if has_sub_article(one_article):
@@ -311,9 +338,9 @@ class EuLaw:
     def parse_sub_article(self, content):
         ''' eg: 第7条 同意的条件 ==> 1．当处理
         '''
-        print('==> Parsing sub article ', content[:30], '...')
+        #print('==> Parsing sub article ', content[:30], '...')
         arr = re.finditer(SUB_ARTICLE_MATCH, content)
-        print("Founded sub articles: ", arr)
+        #print("Founded sub articles: ", arr)
 
         indices = []
         parts = []
@@ -326,8 +353,8 @@ class EuLaw:
         if len(indices) == 0:
             return
 
-        print(article_ids)
-        print('=-=-=-=')
+        #print(article_ids)
+        #print('=-=-=-=')
         i = 0
         while i < len(indices)-1:
             part = content[indices[i]:indices[i+1]]
@@ -395,7 +422,8 @@ class EuLaw:
         if len(self.cur_subarticle) == 0:
             return self.cur_chapter + "_" + self.cur_article
         else:
-            return self.cur_chapter + "_" + self.cur_article + " (" + self.cur_subarticle + ')'
+            pure_id = self.cur_subarticle.replace('．', '')
+            return self.cur_chapter + "_" + self.cur_article + " (" + pure_id + ')'
 
     def has_point(self, content):
         ''' Does article have clause '''
@@ -413,13 +441,13 @@ def is_valid_article_index(content: str, pos: int):
     prev_pos = pos-1
     if prev_pos < 0:
         # the first char
-        print(f"pos: {pos}, in {content}, first char")
+        #print(f"pos: {pos}, in {content}, first char")
         return True
     if prev_pos >= len(content):
-        print(f"pos: {pos}, in {content}, exceed")
+        #print(f"pos: {pos}, in {content}, exceed")
         return False
     cur_char = content[prev_pos]
-    print(f"pos: {pos}, in {content}, char: [{cur_char}]")
+    #print(f"pos: {pos}, in {content}, char: [{cur_char}]")
     return cur_char == '\n'
 
 def read_text_file(filename):
@@ -443,14 +471,39 @@ def compare_gdpr_vs_cn():
     content = read_text_file('CN PIPL Stanford ZH.txt')
     alaw = CnLaw()
     alaw.parse_chapter(content)
-    alaw.print_clauses()
+    alaw.print_details()
 
     content = read_text_file('EU GDPR.txt')
     eu_law = EuLaw()
     eu_law.parse_chapter(content)
-    eu_law.print_contents()
+    eu_law.print_details()
+
+    #compare_two_law(alaw, eu_law)
     #eu_law.print_briefings()
 
+def compare_two_law(cl: CnLaw, el: EuLaw):
+    ''' compare CN PIPL and EU GDPR '''
+    crit_eu = el.get_criteria()
+    crit_cn = cl.get_criteria()
+
+    search_sim = SearchSimilarity(corpus = crit_eu)
+
+    results = []
+    for cnc1 in crit_cn:        
+        res = search_sim.get_similarities(query=cnc1)
+        scores = search_sim.get_scores(query=cnc1)
+
+        if len(scores) > 0:
+            if scores[0] > 0.5:
+                #print(scores[0], ':', cnc1, res[0])
+                #print("-----------------------------------")
+                results.append((scores[0], cnc1, res[0]))
+        else:
+            print("No scores found.")
+    
+    sort_results = sorted(results, key = lambda x: x[0], reverse=True)
+    for item in sort_results:
+        print(f'{item[0]}: {item[1]} | {item[2]}')
 
 def re_demo(content):
     ''' Demo for regex match '''
