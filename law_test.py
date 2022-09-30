@@ -69,5 +69,20 @@ class StringTest(unittest.TestCase):
         v = law_compare.is_valid_article_index(content, start_pos)
         self.assertFalse(v)
 
+    def test_has_point_1(self):
+        content = '(a) xx'
+        v = law_compare.has_point(content)
+        self.assertTrue(v)
+
+    def test_has_point_2(self):
+        content = 'axx'
+        v = law_compare.has_point(content)
+        self.assertFalse(v)
+
+    def test_has_point_3(self):
+        content = '123 (a) xx'
+        v = law_compare.has_point(content)
+        self.assertTrue(v)
+
 if __name__ == "__main__":
     unittest.main()
