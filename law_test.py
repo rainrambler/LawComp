@@ -1,5 +1,6 @@
 import unittest
 import law_compare
+import re
 
 class StringTest(unittest.TestCase):
     ''' testcase of string functions '''
@@ -33,7 +34,7 @@ class StringTest(unittest.TestCase):
         self.assertTrue(v == '22.')
 
     def test_has_sub_article_1(self):
-        content = 'aa 22. bb'
+        content = 'aa 22． bb'
         v = law_compare.has_sub_article(content)
         self.assertTrue(v is True)
 
@@ -53,6 +54,20 @@ class StringTest(unittest.TestCase):
         '''
         v = law_compare.has_sub_article(content)
         self.assertTrue(v is True)
+
+    def test_is_valid_article_index_1(self):
+        content = '第1条 aa'
+        mo = re.search(r'第[0-9]+条', content)
+        start_pos = mo.span()[0] # pos in string
+        v = law_compare.is_valid_article_index(content, start_pos)
+        self.assertTrue(v)
+
+    def test_is_valid_article_index_2(self):
+        content = '参考第10条'
+        mo = re.search(r'第[0-9]+条', content)
+        start_pos = mo.span()[0] # pos in string
+        v = law_compare.is_valid_article_index(content, start_pos)
+        self.assertFalse(v)
 
 if __name__ == "__main__":
     unittest.main()
