@@ -38,6 +38,7 @@ class CnLaw:
     cur_chapter = ""
     cur_section = ""
     cur_article = ""
+    cur_clause = ""
     id2content = {}
 
     def print_clauses(self):
@@ -139,8 +140,10 @@ class CnLaw:
         article_ids = []
 
         for item in arr:
-            indices.append(item.span()[0])
-            article_ids.append(item.group(0))
+            start_pos = item.span()[0] # pos in string
+            if is_valid_article_index(content, start_pos):
+                indices.append(start_pos)
+                article_ids.append(item.group(0))
 
         if len(indices) == 0:
             return
@@ -165,15 +168,23 @@ class CnLaw:
             if self.has_clause(one_article):
                 self.parse_article_clause(one_article)
             else:
+                self.cur_clause = ""
                 cur_id = self.create_id()
                 self.id2content[cur_id] = one_article
 
     def create_id(self):
         ''' Make id in dict'''
         if len(self.cur_section) > 0:
-            return self.cur_chapter + "_" + self.cur_section + "_" + self.cur_article
+            if len(self.cur_clause) > 0:
+                return self.cur_chapter + "_" + self.cur_section + "_" + self.cur_article \
+                    + "_" + self.cur_clause
+            else:
+                return self.cur_chapter + "_" + self.cur_section + "_" + self.cur_article
         else:
-            return self.cur_chapter + "_" + self.cur_article
+            if len(self.cur_clause) > 0:
+                return self.cur_chapter + "_" + self.cur_article + "_" + self.cur_clause
+            else:
+                return self.cur_chapter + "_" + self.cur_article
 
     def has_clause(self, content):
         ''' Does article have clause '''
@@ -200,6 +211,7 @@ class CnLaw:
             i+=1
         last = content[indices[len(indices)-1]:]
         parts.append(mainclause+last)
+        #print('[DBG]', clause_ids)
 
         totalcount = len(clause_ids)
         if totalcount != len(parts):
@@ -207,6 +219,7 @@ class CnLaw:
             return
         for i in range(totalcount):
             one_clause = parts[i]
+            self.cur_clause = clause_ids[i]
             cur_id = self.create_id()
             self.id2content[cur_id] = one_clause
 
@@ -450,6 +463,25 @@ def is_valid_article_index(content: str, pos: int):
     #print(f"pos: {pos}, in {content}, char: [{cur_char}]")
     return cur_char == '\n'
 
+def is_valid_re_match(content: str, reg: str):
+    '''
+    '第1条 aa' ==> True
+    '参考第10条' ==> False
+    '''
+    mo = re.search(reg, content)
+    start_pos = mo.span()[0] # pos in string
+    prev_pos = start_pos-1
+    if prev_pos < 0:
+        # the first char
+        #print(f"pos: {pos}, in {content}, first char")
+        return True
+    if prev_pos >= len(content):
+        #print(f"pos: {pos}, in {content}, exceed")
+        return False
+    cur_char = content[prev_pos]
+    #print(f"pos: {pos}, in {content}, char: [{cur_char}]")
+    return cur_char == '\n'
+
 def read_text_file(filename):
     '''
     Read text file to a string
@@ -471,15 +503,14 @@ def compare_gdpr_vs_cn():
     content = read_text_file('CN PIPL Stanford ZH.txt')
     alaw = CnLaw()
     alaw.parse_chapter(content)
-    alaw.print_details()
+    #alaw.print_details()
 
     content = read_text_file('EU GDPR.txt')
     eu_law = EuLaw()
     eu_law.parse_chapter(content)
-    eu_law.print_details()
+    #eu_law.print_details()
 
-    #compare_two_law(alaw, eu_law)
-    #eu_law.print_briefings()
+    compare_two_law(alaw, eu_law)
 
 def compare_two_law(cl: CnLaw, el: EuLaw):
     ''' compare CN PIPL and EU GDPR '''
@@ -494,10 +525,9 @@ def compare_two_law(cl: CnLaw, el: EuLaw):
         scores = search_sim.get_scores(query=cnc1)
 
         if len(scores) > 0:
-            if scores[0] > 0.5:
-                #print(scores[0], ':', cnc1, res[0])
-                #print("-----------------------------------")
-                results.append((scores[0], cnc1, res[0]))
+            #print(scores[0], ':', cnc1, res[0])
+            #print("-----------------------------------")
+            results.append((scores[0], cnc1, res[0]))
         else:
             print("No scores found.")
     
