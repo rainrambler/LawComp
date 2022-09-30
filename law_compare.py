@@ -141,7 +141,7 @@ class CnLaw:
 
         for item in arr:
             start_pos = item.span()[0] # pos in string
-            if is_valid_article_index(content, start_pos):
+            if is_valid_title_position(content, start_pos):
                 indices.append(start_pos)
                 article_ids.append(item.group(0))
 
@@ -314,7 +314,7 @@ class EuLaw:
 
         for item in arr:
             start_pos = item.span()[0] # pos in string
-            if is_valid_article_index(content, start_pos):
+            if is_valid_title_position(content, start_pos):
                 indices.append(start_pos)
                 article_ids.append(item.group(0)) # title, eg. 第12条
 
@@ -385,33 +385,34 @@ class EuLaw:
             one_article = parts[i]
             self.cur_subarticle = article_ids[i]
 
-            if self.has_point(one_article):
-                #self.parse_point(one_article)
-                # TODO
-                cur_id = self.create_id()
-                self.id2content[cur_id] = one_article
+            if has_point(one_article):
+                self.parse_point(one_article)
+                #cur_id = self.create_id()
+                #self.id2content[cur_id] = one_article
             else:
                 cur_id = self.create_id()
                 self.id2content[cur_id] = one_article
 
     def parse_point(self, content):
-        ''' eg: (a)第五章规定的
+        ''' eg: (a)对涉及到
         '''
         #print('==> Parsing point ', content[:30], '...')
-        arr = re.finditer(r'([a-z]+)', content)
+        arr = re.finditer(r'([a-z])', content)
         indices = []
         parts = []
         point_ids = []
 
         for item in arr:
-            indices.append(item.span()[0]) # pos in string
-            point_ids.append(item.group(0)) # title, eg. (a)第五章规定的
+            start_pos = item.span()[0] # pos in string
+            if is_valid_title_position(content, start_pos):
+                indices.append(start_pos)
+                point_ids.append(item.group(0)) # title, eg. (a)
 
-        print(point_ids)
-        print('=======')
         if len(indices) == 0:
             return
 
+        print(point_ids)
+        print('=======')
         i = 0
         while i < len(indices)-1:
             part = content[indices[i]:indices[i+1]]
@@ -426,9 +427,10 @@ class EuLaw:
             return
 
         for i in range(totalcount):
-            one_article = parts[i]
+            a_point = parts[i]
+            point_id = point_ids[i]
             cur_id = self.create_id()
-            self.id2content[cur_id] = one_article
+            self.id2content[cur_id+"_"+point_id] = a_point
 
     def create_id(self):
         ''' Make id in dict'''
@@ -438,15 +440,15 @@ class EuLaw:
             pure_id = self.cur_subarticle.replace('．', '')
             return self.cur_chapter + "_" + self.cur_article + " (" + pure_id + ')'
 
-    def has_point(self, content):
-        ''' Does article have clause '''
-        return re.search(r'([a-z]+)', content) is not None
+def has_point(content: str):
+    ''' Does article have point '''
+    return re.search(r'([a-z])', content) is not None
 
 def has_sub_article(content: str):
     ''' Does article have sub article '''
     return re.search(SUB_ARTICLE_MATCH, content) is not None
 
-def is_valid_article_index(content: str, pos: int):
+def is_valid_title_position(content: str, pos: int):
     '''
     '第1条 aa' ==> True
     '参考第10条' ==> False
@@ -489,9 +491,9 @@ def compare_gdpr_vs_cn():
     content = read_text_file('EU GDPR.txt')
     eu_law = EuLaw()
     eu_law.parse_chapter(content)
-    #eu_law.print_details()
+    eu_law.print_details()
 
-    compare_two_law(alaw, eu_law)
+    #compare_two_law(alaw, eu_law)
 
 def compare_two_law(cl: CnLaw, el: EuLaw):
     ''' compare CN PIPL and EU GDPR '''
