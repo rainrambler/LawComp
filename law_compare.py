@@ -463,25 +463,6 @@ def is_valid_article_index(content: str, pos: int):
     #print(f"pos: {pos}, in {content}, char: [{cur_char}]")
     return cur_char == '\n'
 
-def is_valid_re_match(content: str, reg: str):
-    '''
-    '第1条 aa' ==> True
-    '参考第10条' ==> False
-    '''
-    mo = re.search(reg, content)
-    start_pos = mo.span()[0] # pos in string
-    prev_pos = start_pos-1
-    if prev_pos < 0:
-        # the first char
-        #print(f"pos: {pos}, in {content}, first char")
-        return True
-    if prev_pos >= len(content):
-        #print(f"pos: {pos}, in {content}, exceed")
-        return False
-    cur_char = content[prev_pos]
-    #print(f"pos: {pos}, in {content}, char: [{cur_char}]")
-    return cur_char == '\n'
-
 def read_text_file(filename):
     '''
     Read text file to a string
