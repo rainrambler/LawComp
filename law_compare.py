@@ -1,7 +1,7 @@
 """
-Filename: law_compare.py
+calculate text2vec similarity
 """
-
+# https://github.com/jpegbert/text2vec
 from text2vec import SearchSimilarity
 from cn_law import CnLaw
 from eu_law import EuLaw
@@ -17,30 +17,42 @@ def compare_gdpr_vs_cn():
     content = content_handler.read_text_file('EU GDPR.txt')
     eu_law = EuLaw()
     eu_law.parse_chapter(content)
-    eu_law.print_details()
+    #eu_law.print_details()
 
-    #compare_two_law(alaw, eu_law)
+    compare_two_law(alaw, eu_law)
+
+TOTAL_RESULT = 3
 
 def compare_two_law(cl: CnLaw, el: EuLaw):
     ''' compare CN PIPL and EU GDPR '''
     crit_eu = el.get_criteria()
     crit_cn = cl.get_criteria()
 
+    print(f'CN: {len(crit_cn)}, EU: {len(crit_eu)}')
+
     search_sim = SearchSimilarity(corpus = crit_eu)
 
     results = []
-    for cnc1 in crit_cn:        
+    for cnc1 in crit_cn:
         res = search_sim.get_similarities(query=cnc1)
         scores = search_sim.get_scores(query=cnc1)
 
         if len(scores) > 0:
             #print(scores[0], ':', cnc1, res[0])
             #print("-----------------------------------")
-            results.append((scores[0], cnc1, res[0]))
+            result_num = TOTAL_RESULT
+            if result_num > len(scores):
+                result_num = len(scores)
+            
+            for i in range(result_num):
+                cur_score = scores[i]
+                if cur_score > 0:
+                    results.append((cur_score, cnc1, res[i]))
         else:
             print("No scores found.")
-    
+
     sort_results = sorted(results, key = lambda x: x[0], reverse=True)
+    print(f"INFO: Total {len(sort_results)} results.")
     for item in sort_results:
         print(f'{item[0]}: {item[1]} | {item[2]}')
 
