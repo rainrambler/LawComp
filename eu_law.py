@@ -45,8 +45,10 @@ class EuLaw:
         chapter_ids = []
 
         for chapt in arr:
-            indices.append(chapt.span()[0])
-            chapter_ids.append(chapt.group(0))
+            start_pos = chapt.span()[0] # pos in string
+            if content_handler.is_valid_title_position(content, start_pos):
+                indices.append(start_pos)
+                chapter_ids.append(chapt.group(0))
         #print(chapter_ids)
         i = 0
         while i < len(indices)-1:
@@ -126,7 +128,7 @@ class EuLaw:
 
     def add_article(self, a_id: int, article: str):
         '''Add an article'''
-        self.id2content[a_id] = article
+        self.id2content[a_id] = content_handler.trim_tail_newline(article)
 
     def parse_sub_article(self, content):
         ''' eg: 第7条 同意的条件 ==> 1．当处理
@@ -171,7 +173,7 @@ class EuLaw:
                 #self.id2content[cur_id] = one_article
             else:
                 cur_id = self.create_id()
-                self.id2content[cur_id] = one_article
+                self.add_article(cur_id, one_article)
 
     def parse_point(self, content):
         ''' eg: (a)对涉及到
@@ -191,15 +193,16 @@ class EuLaw:
         if len(indices) == 0:
             return
 
-        print(point_ids)
-        print('=======')
+        #print(point_ids)
+        #print('=======')
+        mainclause = content[:indices[0]]
         i = 0
         while i < len(indices)-1:
             part = content[indices[i]:indices[i+1]]
-            parts.append(part)
+            parts.append(mainclause + part)
             i+=1
         last = content[indices[len(indices)-1]:]
-        parts.append(last)
+        parts.append(mainclause+last)
 
         totalcount = len(point_ids)
         if totalcount != len(parts):
@@ -210,7 +213,7 @@ class EuLaw:
             a_point = parts[i]
             point_id = point_ids[i]
             cur_id = self.create_id()
-            self.id2content[cur_id+"_"+point_id] = a_point
+            self.add_article(cur_id+"_"+point_id, a_point)
 
     def create_id(self):
         ''' Make id in dict'''
@@ -219,3 +222,16 @@ class EuLaw:
         else:
             pure_id = self.cur_subarticle.replace('．', '')
             return self.cur_chapter + "_" + self.cur_article + " (" + pure_id + ')'
+
+def read_law():
+    content = content_handler.read_text_file('EU GDPR.txt')
+    eu_law = EuLaw()
+    eu_law.parse_chapter(content)
+    eu_law.print_details()
+
+def main():
+    ''' Entrance '''
+    read_law()
+
+if __name__ == "__main__":
+    main()
