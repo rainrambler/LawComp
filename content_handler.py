@@ -85,3 +85,11 @@ def re_demo(content):
         return ""
     else:
         return mo.group()
+
+def trim_str(content: str, desired_len: int):
+    ''' Trim string. eg. abcde, 2 ==> return ab '''
+    if desired_len >= len(content):
+        return content
+    if desired_len < 0:
+        return content
+    return content[:desired_len]
