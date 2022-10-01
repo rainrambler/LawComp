@@ -93,3 +93,23 @@ def trim_str(content: str, desired_len: int):
     if desired_len < 0:
         return content
     return content[:desired_len]
+
+def trim_tail_newline(content: str):
+    ''' aaa\r\n\n ==> aaa '''
+    last_pos = len(content)-1
+    if last_pos < 0:
+        return ""
+    if last_pos == 0:
+        return content
+
+    cur_pos = last_pos
+    while is_blank_or_newline(content[cur_pos]):
+        cur_pos = cur_pos-1
+
+    if cur_pos <= 0:
+        return ""
+    return content[0:cur_pos+1]
+
+def is_blank_or_newline(s: str):
+    ''' is blank or newline char '''
+    return " \t\r\n".find(s) != -1
