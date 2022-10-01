@@ -84,5 +84,32 @@ class StringTest(unittest.TestCase):
         v = content_handler.has_point(content)
         self.assertTrue(v)
 
+    def test_is_blank_or_newline_1(self):
+        content = ' '
+        v = content_handler.is_blank_or_newline(content)
+        self.assertTrue(v)
+
+    def test_is_blank_or_newline_2(self):
+        content = 'a'
+        v = content_handler.is_blank_or_newline(content)
+        self.assertFalse(v)
+
+    def test_is_blank_or_newline_3(self):
+        content = '\n'
+        v = content_handler.is_blank_or_newline(content)
+        self.assertTrue(v)
+
+    def test_trim_tail_newline_1(self):
+        content = '123  '
+        v = content_handler.trim_tail_newline(content)
+        #print("res=", v)
+        self.assertTrue(v == '123')
+
+    def test_trim_tail_newline_2(self):
+        content = '123\n\n'
+        v = content_handler.trim_tail_newline(content)
+        #print("res=", v)
+        self.assertTrue(v == '123')
+
 if __name__ == "__main__":
     unittest.main()
