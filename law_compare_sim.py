@@ -23,6 +23,7 @@ def compare_gdpr_vs_cn():
     compare_two_law(alaw, eu_law)
 
 TOTAL_RESULT = 3
+DESIRED_LEN = 40
 
 def compare_two_law(cl: CnLaw, el: EuLaw):
     ''' compare CN PIPL and EU GDPR '''
@@ -32,20 +33,27 @@ def compare_two_law(cl: CnLaw, el: EuLaw):
     print(f'CN: {len(crit_cn)}, EU: {len(crit_eu)}')
 
     ai_model = SentenceTransformer("../paraphrase-multilingual-MiniLM-L12-v2")
-    em_cn = ai_model.encode(crit_cn)
-    em_eu = ai_model.encode(crit_eu)
+    em_cn = ai_model.encode(crit_cn, convert_to_tensor=True)
+    em_eu = ai_model.encode(crit_eu, convert_to_tensor=True)
 
     # Compute cosine-similarities for each sentence with each other sentence
     cos_scores = util.cos_sim(em_cn, em_eu)
 
     # Ref: https://www.sbert.net/docs/usage/semantic_textual_similarity.html 
-    for i in range(len(crit_cn)):
+    for i, c_i in enumerate(crit_cn):
+        pairs = []
         for j in range(len(crit_eu)):
             sim_val = cos_scores[i][j]
-            if sim_val > 0.5:
-                print("{} \t {} \t Score: {:.4f}".format(content_handler.trim_str(crit_cn[i], 30), \
-                    content_handler.trim_str(crit_eu[j], 30), sim_val))
-    #print(cos_scores) 
+            if sim_val > 0.1:
+                pairs.append({'index': [i, j], 'score': cos_scores[i][j]})
+
+        #Sort scores in decreasing order
+        pairs = sorted(pairs, key=lambda x: x['score'], reverse=True)
+
+        for pair in pairs[0:TOTAL_RESULT]:
+            i, j = pair['index']
+            print("{} | {} | Score: {:.4f}".format(c_i, crit_eu[j], pair['score']))
+            print('----------------------------------')
 
 def main():
     ''' Entrance '''
