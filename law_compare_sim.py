@@ -39,13 +39,29 @@ def compare_two_law(cl: CnLaw, el: EuLaw):
     # Compute cosine-similarities for each sentence with each other sentence
     cos_scores = util.cos_sim(em_cn, em_eu)
 
-    # Ref: https://www.sbert.net/docs/usage/semantic_textual_similarity.html 
+    # Ref: https://www.sbert.net/docs/usage/semantic_textual_similarity.html
+    top_pairs = []
+    least_pairs = []
     for i, c_i in enumerate(crit_cn):
         pairs = []
+        top_val = 0
+        bottom_val = 100
+        top_pair = {}
+        bottom_pair = {}
         for j in range(len(crit_eu)):
             sim_val = cos_scores[i][j]
             if sim_val > 0.1:
-                pairs.append({'index': [i, j], 'score': cos_scores[i][j]})
+                pairs.append({'index': [i, j], 'score': sim_val})
+            if sim_val > top_val:
+                top_pair = {'index': [i, j], 'score': sim_val}
+                top_val = sim_val
+            if sim_val < bottom_val:
+                bottom_pair = {'index': [i, j], 'score': sim_val}
+                bottom_val = sim_val
+        
+        # Append max and min matched items
+        top_pairs.append(top_pair)
+        least_pairs.append(bottom_pair)
 
         #Sort scores in decreasing order
         pairs = sorted(pairs, key=lambda x: x['score'], reverse=True)
