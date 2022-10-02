@@ -44,32 +44,40 @@ def compare_two_law(cl: CnLaw, el: EuLaw):
     least_pairs = []
     for i, c_i in enumerate(crit_cn):
         pairs = []
-        top_val = 0
-        bottom_val = 100
-        top_pair = {}
-        bottom_pair = {}
         for j in range(len(crit_eu)):
             sim_val = cos_scores[i][j]
             if sim_val > 0.1:
                 pairs.append({'index': [i, j], 'score': sim_val})
-            if sim_val > top_val:
-                top_pair = {'index': [i, j], 'score': sim_val}
-                top_val = sim_val
-            if sim_val < bottom_val:
-                bottom_pair = {'index': [i, j], 'score': sim_val}
-                bottom_val = sim_val
-        
-        # Append max and min matched items
-        top_pairs.append(top_pair)
-        least_pairs.append(bottom_pair)
 
         #Sort scores in decreasing order
         pairs = sorted(pairs, key=lambda x: x['score'], reverse=True)
+
+        # Append max and min matched items
+        top_pair = pairs[0]
+        bottom_pair = pairs[len(pairs)-1]
+        top_pairs.append(top_pair)
+        least_pairs.append(bottom_pair)
 
         for pair in pairs[0:TOTAL_RESULT]:
             i, j = pair['index']
             print("{} | {} | Score: {:.4f}".format(c_i, crit_eu[j], pair['score']))
             print('----------------------------------')
+
+    print('==Top matches==================')
+    #Sort scores in decreasing order
+    top_pairs = sorted(top_pairs, key=lambda x: x['score'], reverse=True)
+    for pair in top_pairs:
+        i, j = pair['index']
+        print("{} | {} | Score: {:.4f}".format(crit_cn[i], crit_eu[j], pair['score']))
+        print('----------------------------------')
+
+    print('==Least matches==================')
+    #Sort scores in increasing order
+    least_pairs = sorted(least_pairs, key=lambda x: x['score'], reverse=False)
+    for pair in least_pairs:
+        i, j = pair['index']
+        print("{} | {} | Score: {:.4f}".format(crit_cn[i], crit_eu[j], pair['score']))
+        print('----------------------------------')
 
 def main():
     ''' Entrance '''
