@@ -22,7 +22,7 @@ def compare_gdpr_vs_cn():
 
     compare_two_law(alaw, eu_law)
 
-TOTAL_RESULT = 3
+TOTAL_RESULT = 1
 DESIRED_LEN = 40
 
 def compare_two_law(cl: CnLaw, el: EuLaw):
@@ -41,7 +41,6 @@ def compare_two_law(cl: CnLaw, el: EuLaw):
 
     # Ref: https://www.sbert.net/docs/usage/semantic_textual_similarity.html
     top_pairs = []
-    least_pairs = []
     for i, c_i in enumerate(crit_cn):
         pairs = []
         for j in range(len(crit_eu)):
@@ -54,9 +53,8 @@ def compare_two_law(cl: CnLaw, el: EuLaw):
 
         # Append max and min matched items
         top_pair = pairs[0]
-        bottom_pair = pairs[len(pairs)-1]
+        #bottom_pair = pairs[len(pairs)-1]
         top_pairs.append(top_pair)
-        least_pairs.append(bottom_pair)
 
         for pair in pairs[0:TOTAL_RESULT]:
             i, j = pair['index']
@@ -73,8 +71,8 @@ def compare_two_law(cl: CnLaw, el: EuLaw):
 
     print('==Least matches==================')
     #Sort scores in increasing order
-    least_pairs = sorted(least_pairs, key=lambda x: x['score'], reverse=False)
-    for pair in least_pairs:
+    top_pairs = sorted(top_pairs, key=lambda x: x['score'], reverse=False)
+    for pair in top_pairs:
         i, j = pair['index']
         print("{} | {} | Score: {:.4f}".format(crit_cn[i], crit_eu[j], pair['score']))
         print('----------------------------------')
